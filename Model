@@ -1,0 +1,47 @@
+import pandas as pd
+import datetime as dt
+from imblearn.over_sampling import SMOTE, BorderlineSMOTE, SVMSMOTE, ADASYN
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.ensemble import RandomForestClassifier, StackingClassifier
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+import numpy as np
+
+data_train = pd.read_csv(r"C:\Users\Victor Steinrud\Downloads\fraudTrain.csv")
+data_test = pd.read_csv(r"C:\Users\Victor Steinrud\Downloads\fraudTest.csv")
+
+def preprocessing(data):
+    data['age'] = dt.date.today().year - pd.to_datetime(data['dob']).dt.year
+    data['hour'] = pd.to_datetime(data['trans_date_trans_time']).dt.hour
+    data['day'] = pd.to_datetime(data['trans_date_trans_time']).dt.dayofweek
+    data['month'] = pd.to_datetime(data['trans_date_trans_time']).dt.month
+    data = data[['category', 'amt', 'zip', 'lat', 'long', 'city_pop', 'merch_lat', 'merch_long', 'is_fraud', 'age', 'hour', 'day', 'month']]
+    data = pd.get_dummies(data, drop_first=True)
+    data = remove_highly_correlated_features(data=data)
+    X = data.drop('is_fraud', axis='columns').values
+    y = data['is_fraud'].values
+    return data, X, y
+
+def remove_highly_correlated_features(data, threshold=0.8):
+    corr_matrix = data.corr().abs()
+    upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+    to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+    print(f"Dropping highly correlated columns: {to_drop}")
+    data = data.drop(to_drop, axis=1)
+    
+    return data
+
+train, X_train, y_train = preprocessing(data_train)
+test, X_test, y_test = preprocessing(data_test)
+
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
+from sklearn.utils import shuffle
+X_train_resampled, y_train_resampled = shuffle(X_train_resampled, y_train_resampled, random_state=42)
+
+rf = RandomForestClassifier(random_state=42) 
+rf.fit(X_train_resampled, y_train_resampled)
+y_pred = rf.predict(X_test)
+
+print(classification_report(y_test, y_pred))
