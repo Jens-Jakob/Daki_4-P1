@@ -48,7 +48,7 @@ def feature_hash(data, columns, n_features=50):
         data = pd.concat([data, hashed_df], axis=1).drop(col, axis=1)
     return data
 
-columns_to_hash = ['merchant', 'first', 'last', 'cc_num', 'job', 'state']
+columns_to_hash = ['merchant', 'first', 'last', 'job', 'state']
 data_train = feature_hash(data_train, columns_to_hash)
 data_test = feature_hash(data_test, columns_to_hash)
 
@@ -60,10 +60,11 @@ X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 
 from sklearn.utils import shuffle
 X_train_resampled, y_train_resampled = shuffle(X_train_resampled, y_train_resampled, random_state=42)
+import xgboost as xgb
 
-rf = RandomForestClassifier(random_state=42) 
+xgb_model = xgb.XGBClassifier(random_state=42, use_label_encoder=False, eval_metric='logloss')
 
-rf.fit(X_train_resampled, y_train_resampled) 
-y_pred = rf.predict(X_test)
+xgb_model.fit(X_train_resampled, y_train_resampled)
+y_pred_xgb = xgb_model.predict(X_test)
 
-print(classification_report(y_test, y_pred))
+print(classification_report(y_test, y_pred_xgb))
