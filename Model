@@ -17,7 +17,6 @@ def preprocessing(data):
     data['hour'] = pd.to_datetime(data['trans_date_trans_time']).dt.hour
     data['day'] = pd.to_datetime(data['trans_date_trans_time']).dt.dayofweek
     data['month'] = pd.to_datetime(data['trans_date_trans_time']).dt.month
-    
     data = data[['category', 'gender', 'amt', 'zip', 'lat', 'long', 'city_pop', 'merch_lat', 'merch_long', 'is_fraud', 'age', 'hour', 'day', 'month']]
     data = pd.get_dummies(data, drop_first=True)
     data = remove_highly_correlated_features(data=data)
@@ -33,8 +32,6 @@ def remove_highly_correlated_features(data, threshold=0.8):
     data = data.drop(to_drop, axis=1)
     
     return data
-
-
 
 def feature_hash(data, columns, n_features=50):
     hasher = FeatureHasher(n_features=n_features, input_type='string')
